@@ -55,6 +55,21 @@ static Eigen::Isometry3d odom2isometry(const nav_msgs::OdometryConstPtr& odom_ms
   return isometry;
 }
 
+static Eigen::Isometry3d matrix2Isometry(const Eigen::Matrix4f& matrix4f) {
+
+  Eigen::Isometry3d isometry = Eigen::Isometry3d::Identity();
+  Eigen::Matrix3f m3 = matrix4f.topLeftCorner(3, 3);
+  Eigen::Matrix3d rotate;
+  for(int i = 0; i < 3 ; i++) {
+    for(int j = 0; j < 3; j++){
+      rotate(i, j) = m3(i, j);
+    }
+  }
+  isometry.linear() = rotate;
+  isometry.translation() = Eigen::Vector3d(matrix4f(0, 3), matrix4f(1, 3), matrix4f(2, 3));
+  return isometry;
+}
+
 }
 
 #endif // ROS_UTILS_HPP

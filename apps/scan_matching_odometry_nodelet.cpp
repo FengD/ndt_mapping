@@ -18,6 +18,8 @@
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/passthrough.h>
 #include <pcl/filters/approximate_voxel_grid.h>
+#include <pcl/common/common.h>
+#include <pcl/common/transforms.h>
 
 #include <hdl_graph_slam/ros_utils.hpp>
 #include <hdl_graph_slam/registrations.hpp>
@@ -38,7 +40,7 @@ public:
     private_nh = getPrivateNodeHandle();
 
     initialize_params();
-
+    m_pub = nh.advertise<sensor_msgs::PointCloud2>("sss", 32);
     points_sub = nh.subscribe("/filtered_points", 256, &ScanMatchingOdometryNodelet::cloud_callback, this);
     read_until_pub = nh.advertise<std_msgs::Header>("/scan_matching_odometry/read_until", 32);
     odom_pub = nh.advertise<nav_msgs::Odometry>("/odom", 32);
@@ -132,6 +134,26 @@ private:
     return filtered;
   }
 
+  pcl::PointCloud<PointT>::ConstPtr distance_filter_by_pose(const pcl::PointCloud<PointT>::ConstPtr& cloud, Eigen::Matrix4f pose) {
+    pcl::PointCloud<PointT>::Ptr filtered(new pcl::PointCloud<PointT>());
+    filtered->reserve(cloud->size());
+    Eigen::Vector4f c = pose.col(3).transpose();
+
+    std::copy_if(cloud->begin(), cloud->end(), std::back_inserter(filtered->points),
+      [&](const PointT& p) {
+        double d = sqrt((p.x - c[0]) * (p.x - c[0]) + (p.y - c[1]) * (p.y - c[1]));
+        return d < 80;
+      }
+    );
+
+    filtered->width = filtered->size();
+    filtered->height = 1;
+    filtered->is_dense = false;
+
+    filtered->header = cloud->header;
+    return filtered;
+  }
+
   /**
    * @brief estimate the relative pose between an input cloud and a keyframe cloud
    * @param stamp  the timestamp of the input cloud
@@ -140,10 +162,12 @@ private:
    */
   Eigen::Matrix4f matching(const ros::Time& stamp, const pcl::PointCloud<PointT>::ConstPtr& cloud) {
     if(!keyframe) {
+      NODELET_INFO_STREAM("Init_Matching");
       prev_trans.setIdentity();
       keyframe_pose.setIdentity();
       keyframe_stamp = stamp;
       keyframe = downsample(cloud);
+      targetCloud += *keyframe;
       registration->setInputTarget(keyframe);
       return Eigen::Matrix4f::Identity();
     }
@@ -183,13 +207,23 @@ private:
     double delta_trans = trans.block<3, 1>(0, 3).norm();
     double delta_angle = std::acos(Eigen::Quaternionf(trans.block<3, 3>(0, 0)).w());
     double delta_time = (stamp - keyframe_stamp).toSec();
+    // NODELET_INFO_STREAM("delta_trans:" << delta_trans);
+    // NODELET_INFO_STREAM("delta_angle:" << delta_angle);
+    // NODELET_INFO_STREAM("delta_time:" << delta_time);
     if(delta_trans > keyframe_delta_trans || delta_angle > keyframe_delta_angle || delta_time > keyframe_delta_time) {
       keyframe = filtered;
+      pcl::PointCloud<PointT>::Ptr ss(new pcl::PointCloud<PointT>());
+      pcl::transformPointCloud(*keyframe, *ss, odom);
+      targetCloud += *ss;
+      targetCloud.header = keyframe->header;
+      targetCloud.header.frame_id = "map";
+      targetCloud = *distance_filter_by_pose(targetCloud.makeShared(), odom);
       registration->setInputTarget(keyframe);
 
       keyframe_pose = odom;
       keyframe_stamp = stamp;
       prev_trans.setIdentity();
+      m_pub.publish(targetCloud.makeShared());
     }
 
     return odom;
@@ -238,6 +272,8 @@ private:
   std::string odom_frame_id;
   ros::Publisher read_until_pub;
 
+  ros::Publisher m_pub;
+
   // keyframe parameters
   double keyframe_delta_trans;  // minimum distance between keyframes
   double keyframe_delta_angle;  //
@@ -253,6 +289,8 @@ private:
   Eigen::Matrix4f keyframe_pose;               // keyframe pose
   ros::Time keyframe_stamp;                    // keyframe time
   pcl::PointCloud<PointT>::ConstPtr keyframe;  // keyframe point cloud
+
+  pcl::PointCloud<PointT> targetCloud;
 
   //
   pcl::Filter<PointT>::Ptr downsample_filter;

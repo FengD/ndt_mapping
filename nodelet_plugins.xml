@@ -6,10 +6,18 @@
   <class name="hdl_graph_slam/FloorDetectionNodelet" type="hdl_graph_slam::FloorDetectionNodelet" base_class_type="nodelet::Nodelet" />
 </library>
 
+<library path="lib/libinit_cloud_nodelet">
+  <class name="hdl_graph_slam/InitCloudNodelet" type="hdl_graph_slam::InitCloudNodelet" base_class_type="nodelet::Nodelet" />
+</library>
+
 <library path="lib/libprefiltering_nodelet">
   <class name="hdl_graph_slam/PrefilteringNodelet" type="hdl_graph_slam::PrefilteringNodelet" base_class_type="nodelet::Nodelet" />
 </library>
 
 <library path="lib/libhdl_graph_slam_nodelet">
   <class name="hdl_graph_slam/HdlGraphSlamNodelet" type="hdl_graph_slam::HdlGraphSlamNodelet" base_class_type="nodelet::Nodelet" />
+</library>
+
+<library path="lib/libhdl_graph_slam_multi_frame_nodelet">
+  <class name="hdl_graph_slam/HdlGraphSlamMultiFrameNodelet" type="hdl_graph_slam::HdlGraphSlamMultiFrameNodelet" base_class_type="nodelet::Nodelet" />
 </library>

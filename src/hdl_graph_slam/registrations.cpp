@@ -41,6 +41,8 @@ boost::shared_ptr<pcl::Registration<pcl::PointXYZI, pcl::PointXYZI>> select_regi
       std::cout << "registration: NDT " << ndt_resolution << std::endl;
       boost::shared_ptr<pcl::NormalDistributionsTransform<PointT, PointT>> ndt(new pcl::NormalDistributionsTransform<PointT, PointT>());
       ndt->setTransformationEpsilon(0.01);
+      ndt->setMaximumIterations(32);
+      ndt->setStepSize(0.1);
       ndt->setResolution(ndt_resolution);
       return ndt;
     } else {
@@ -53,6 +55,7 @@ boost::shared_ptr<pcl::Registration<pcl::PointXYZI, pcl::PointXYZI>> select_regi
       }
       ndt->setTransformationEpsilon(0.01);
       ndt->setMaximumIterations(64);
+      ndt->setStepSize(0.1);
       ndt->setResolution(ndt_resolution);
       if(nn_search_method == "KDTREE") {
         ndt->setNeighborhoodSearchMethod(pclomp::KDTREE);

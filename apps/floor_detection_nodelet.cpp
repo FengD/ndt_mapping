@@ -50,8 +50,8 @@ private:
    * @brief initialize parameters
    */
   void initialize_params() {
-    tilt_deg = private_nh.param<double>("tilt_deg", 0.0);                          // approximate sensor tilt angle [deg]
-    sensor_height = private_nh.param<double>("sensor_height", 2.0);                // approximate sensor height [m]
+    // tilt_deg = private_nh.param<double>("tilt_deg", 0.0);                          // approximate sensor tilt angle [deg]
+    // sensor_height = private_nh.param<double>("sensor_height", 2.0);                // approximate sensor height [m]
     height_clip_range= private_nh.param<double>("height_clip_range", 1.0);         // points with heights in [sensor_height - height_clip_range, sensor_height + height_clip_range] will be used for floor detection
     floor_pts_thresh = private_nh.param<int>("floor_pts_thresh", 512);             // minimum number of support points of RANSAC to accept a detected floor plane
     floor_normal_thresh = private_nh.param<double>("floor_normal_thresh", 10.0);   // verticality check thresold for the detected floor plane [deg]
@@ -104,19 +104,22 @@ private:
   boost::optional<Eigen::Vector4f> detect(const pcl::PointCloud<PointT>::Ptr& cloud) const {
     // compensate the tilt rotation
     Eigen::Matrix4f tilt_matrix = Eigen::Matrix4f::Identity();
-    tilt_matrix.topLeftCorner(3, 3) = Eigen::AngleAxisf(tilt_deg * M_PI / 180.0f, Eigen::Vector3f::UnitY()).toRotationMatrix();
-
-    // filtering before RANSAC (height and normal filtering)
+    // tilt_matrix.topLeftCorner(3, 3) = Eigen::AngleAxisf(tilt_deg * M_PI / 180.0f, Eigen::Vector3f::UnitY()).toRotationMatrix();
+    //
+    // // filtering before RANSAC (height and normal filtering)
     pcl::PointCloud<PointT>::Ptr filtered(new pcl::PointCloud<PointT>);
-    pcl::transformPointCloud(*cloud, *filtered, tilt_matrix);
-    filtered = plane_clip(filtered, Eigen::Vector4f(0.0f, 0.0f, 1.0f, sensor_height + height_clip_range), false);
-    filtered = plane_clip(filtered, Eigen::Vector4f(0.0f, 0.0f, 1.0f, sensor_height - height_clip_range), true);
+    // pcl::transformPointCloud(*cloud, *filtered, tilt_matrix);
+    // filtered = plane_clip(filtered, Eigen::Vector4f(0.0f, 0.0f, 1.0f, sensor_height + height_clip_range), false);
+    // filtered = plane_clip(filtered, Eigen::Vector4f(0.0f, 0.0f, 1.0f, sensor_height - height_clip_range), true);
+
+    filtered = plane_clip(cloud, Eigen::Vector4f(0.0f, 0.0f, 1.0f, height_clip_range), false);
+    filtered = plane_clip(filtered, Eigen::Vector4f(0.0f, 0.0f, 1.0f, - height_clip_range), true);
 
     if(use_normal_filtering) {
       filtered = normal_filtering(filtered);
     }
 
-    pcl::transformPointCloud(*filtered, *filtered, static_cast<Eigen::Matrix4f>(tilt_matrix.inverse()));
+    // pcl::transformPointCloud(*filtered, *filtered, static_cast<Eigen::Matrix4f>(tilt_matrix.inverse()));
 
     if(floor_filtered_pub.getNumSubscribers()) {
       filtered->header = cloud->header;
@@ -211,7 +214,7 @@ private:
 
     pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>);
     ne.setKSearch(10);
-    ne.setViewPoint(0.0f, 0.0f, sensor_height);
+    ne.setViewPoint(0.0f, 0.0f, 0.0f);
     ne.compute(*normals);
 
     pcl::PointCloud<PointT>::Ptr filtered(new pcl::PointCloud<PointT>);
@@ -247,8 +250,8 @@ private:
 
   // floor detection parameters
   // see initialize_params() for the details
-  double tilt_deg;
-  double sensor_height;
+  // double tilt_deg;
+  // double sensor_height;
   double height_clip_range;
 
   int floor_pts_thresh;

@@ -29,12 +29,15 @@ public:
 
     initialize_params();
 
-    points_sub = nh.subscribe("/transformed_velodyne_points", 64, &PrefilteringNodelet::cloud_callback, this);
-    points_pub = nh.advertise<sensor_msgs::PointCloud2>("/filtered_points", 32);
+    points_sub = nh.subscribe(points_sub_topic, 64, &PrefilteringNodelet::cloud_callback, this);
+    points_pub = nh.advertise<sensor_msgs::PointCloud2>(points_pub_topic, 32);
   }
 
 private:
   void initialize_params() {
+
+    points_sub_topic = private_nh.param<std::string>("points_sub_topic", "transformed_velodyne_points");
+    points_pub_topic = private_nh.param<std::string>("points_pub_topic", "filtered_points");
     std::string downsample_method = private_nh.param<std::string>("downsample_method", "VOXELGRID");
     double downsample_resolution = private_nh.param<double>("downsample_resolution", 0.1);
 
@@ -81,6 +84,10 @@ private:
     use_distance_filter = private_nh.param<bool>("use_distance_filter", true);
     distance_near_thresh = private_nh.param<double>("distance_near_thresh", 1.0);
     distance_far_thresh = private_nh.param<double>("distance_far_thresh", 100.0);
+
+    use_celling_filter = private_nh.param<bool>("use_celling_filter", false);
+    low_thresh = private_nh.param<double>("low_thresh", -30.0);
+    height_thresh = private_nh.param<double>("height_thresh", 100.0);
   }
 
   void cloud_callback(const pcl::PointCloud<PointT>::ConstPtr& src_cloud) {
@@ -89,6 +96,7 @@ private:
     }
 
     pcl::PointCloud<PointT>::ConstPtr filtered = distance_filter(src_cloud);
+    filtered = celling_filter(filtered);
     filtered = downsample(filtered);
     filtered = outlier_removal(filtered);
 
@@ -122,6 +130,9 @@ private:
   }
 
   pcl::PointCloud<PointT>::ConstPtr distance_filter(const pcl::PointCloud<PointT>::ConstPtr& cloud) const {
+    if(!use_distance_filter) {
+      return cloud;
+    }
     pcl::PointCloud<PointT>::Ptr filtered(new pcl::PointCloud<PointT>());
     filtered->reserve(cloud->size());
 
@@ -129,6 +140,28 @@ private:
       [&](const PointT& p) {
         double d = p.getVector3fMap().norm();
         return d > distance_near_thresh && d < distance_far_thresh;
+      }
+    );
+
+    filtered->width = filtered->size();
+    filtered->height = 1;
+    filtered->is_dense = false;
+
+    filtered->header = cloud->header;
+
+    return filtered;
+  }
+
+  pcl::PointCloud<PointT>::ConstPtr celling_filter(const pcl::PointCloud<PointT>::ConstPtr& cloud) const {
+    if(!use_celling_filter) {
+      return cloud;
+    }
+    pcl::PointCloud<PointT>::Ptr filtered(new pcl::PointCloud<PointT>());
+    filtered->reserve(cloud->size());
+
+    std::copy_if(cloud->begin(), cloud->end(), std::back_inserter(filtered->points),
+      [&](const PointT& p) {
+        return p.z > low_thresh && p.z < height_thresh;
       }
     );
 
@@ -152,8 +185,14 @@ private:
   double distance_near_thresh;
   double distance_far_thresh;
 
+  bool use_celling_filter;
+  double low_thresh;
+  double height_thresh;
+
   pcl::Filter<PointT>::Ptr downsample_filter;
   pcl::Filter<PointT>::Ptr outlier_removal_filter;
+
+  std::string points_sub_topic, points_pub_topic;
 
 };
 

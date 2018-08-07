@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   message_generation
   ndt_omp
+  calibration
 )
 
 find_package(PCL 1.7 REQUIRED)
@@ -71,6 +72,14 @@ include_directories(
 )
 
 # nodelets
+add_library(init_cloud_nodelet apps/init_cloud_nodelet.cpp)
+target_link_libraries(init_cloud_nodelet
+  ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
+  yaml-cpp
+)
+
+
 add_library(prefiltering_nodelet apps/prefiltering_nodelet.cpp)
 target_link_libraries(prefiltering_nodelet
   ${catkin_LIBRARIES}
@@ -95,7 +104,6 @@ target_link_libraries(scan_matching_odometry_nodelet
   ${PCL_LIBRARIES}
 )
 
-
 add_library(hdl_graph_slam_nodelet
   apps/hdl_graph_slam_nodelet.cpp
   src/hdl_graph_slam/graph_slam.cpp
@@ -116,3 +124,24 @@ target_link_libraries(hdl_graph_slam_nodelet
   ${G2O_TYPES_SLAM3D_ADDONS}
 )
 add_dependencies(hdl_graph_slam_nodelet ${PROJECT_NAME}_gencpp)
+
+add_library(hdl_graph_slam_multi_frame_nodelet
+  apps/hdl_graph_slam_multiframe_reg_nodelet.cpp
+  src/hdl_graph_slam/graph_slam.cpp
+  src/hdl_graph_slam/keyframe.cpp
+  src/hdl_graph_slam/map_cloud_generator.cpp
+  src/hdl_graph_slam/registrations.cpp
+  src/hdl_graph_slam/information_matrix_calculator.cpp
+)
+target_link_libraries(hdl_graph_slam_multi_frame_nodelet
+  ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
+  ${G2O_TYPES_DATA}
+  ${G2O_CORE_LIBRARY}
+  ${G2O_STUFF_LIBRARY}
+  ${G2O_SOLVER_PCG}
+  ${G2O_SOLVER_CSPARSE}
+  ${G2O_TYPES_SLAM3D}
+  ${G2O_TYPES_SLAM3D_ADDONS}
+)
+add_dependencies(hdl_graph_slam_multi_frame_nodelet ${PROJECT_NAME}_gencpp)
