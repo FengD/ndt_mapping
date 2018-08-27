@@ -4,9 +4,9 @@ hdl_graph_slam_package
 ### DESCRIPTION
 This package is used to execute a lidar slam.
 
-### PACKAGE NEEDED
-[calibration] (http://gitlab.hirain.com/feng.ding1/hdl_calibration.git) (provide an initializaition calibration yaml file)
-[ndt_omp] (http://gitlab.hirain.com/feng.ding1/ndt_omp.git) (provide a multi-thread ndt method)
+### RELATED Package
+[calibration] (http://gitlabout.hirain.com/feng.ding1/hdl_mapping-init-calibration.git) (provide an initializaition calibration yaml file)
+[ndt_omp] (http://gitlabout.hirain.com/feng.ding1/hdl_mapping-ndt-omp.git) (provide a multi-thread ndt method)
 
 
 ### BUILD
