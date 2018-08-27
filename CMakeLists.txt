@@ -20,14 +20,6 @@ find_package(catkin REQUIRED COMPONENTS
   calibration
 )
 
-find_package(PCL 1.7 REQUIRED)
-include_directories(${PCL_INCLUDE_DIRS})
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
-
-message(STATUS "PCL_INCLUDE_DIRS:" ${PCL_INCLUDE_DIRS})
-message(STATUS "PCL_LIBRARY_DIRS:" ${PCL_LIBRARY_DIRS})
-message(STATUS "PCL_DEFINITIONS:" ${PCL_DEFINITIONS})
 
 find_package(G2O REQUIRED)
 include_directories(SYSTEM ${G2O_INCLUDE_DIR} ${G2O_INCLUDE_DIRS})
@@ -75,7 +67,6 @@ include_directories(
 add_library(init_cloud_nodelet apps/init_cloud_nodelet.cpp)
 target_link_libraries(init_cloud_nodelet
   ${catkin_LIBRARIES}
-  ${PCL_LIBRARIES}
   yaml-cpp
 )
 
@@ -83,14 +74,12 @@ target_link_libraries(init_cloud_nodelet
 add_library(prefiltering_nodelet apps/prefiltering_nodelet.cpp)
 target_link_libraries(prefiltering_nodelet
   ${catkin_LIBRARIES}
-  ${PCL_LIBRARIES}
 )
 
 
 add_library(floor_detection_nodelet apps/floor_detection_nodelet.cpp)
 target_link_libraries(floor_detection_nodelet
   ${catkin_LIBRARIES}
-  ${PCL_LIBRARIES}
 )
 add_dependencies(floor_detection_nodelet ${PROJECT_NAME}_gencpp)
 
@@ -101,7 +90,6 @@ add_library(scan_matching_odometry_nodelet
 )
 target_link_libraries(scan_matching_odometry_nodelet
   ${catkin_LIBRARIES}
-  ${PCL_LIBRARIES}
 )
 
 add_library(hdl_graph_slam_nodelet
@@ -114,7 +102,6 @@ add_library(hdl_graph_slam_nodelet
 )
 target_link_libraries(hdl_graph_slam_nodelet
   ${catkin_LIBRARIES}
-  ${PCL_LIBRARIES}
   ${G2O_TYPES_DATA}
   ${G2O_CORE_LIBRARY}
   ${G2O_STUFF_LIBRARY}
@@ -135,7 +122,6 @@ add_library(hdl_graph_slam_multi_frame_nodelet
 )
 target_link_libraries(hdl_graph_slam_multi_frame_nodelet
   ${catkin_LIBRARIES}
-  ${PCL_LIBRARIES}
   ${G2O_TYPES_DATA}
   ${G2O_CORE_LIBRARY}
   ${G2O_STUFF_LIBRARY}
