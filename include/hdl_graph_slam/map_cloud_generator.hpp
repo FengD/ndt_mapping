@@ -24,7 +24,9 @@ public:
    * @param resolution  resolution of generated map
    * @return generated map point cloud
    */
-  pcl::PointCloud<PointT>::Ptr generate(const std::vector<KeyFrameSnapshot::Ptr>& keyframes, double resolution) const;
+  pcl::PointCloud<PointT>::Ptr generate(const std::vector<KeyFrameSnapshot::Ptr>& keyframes, double resolution, float xRange, float yRange) const;
+
+  pcl::PointCloud<PointT>::Ptr generateRawMap(const std::vector<KeyFrameSnapshot::Ptr>& keyframes, float xRange, float yRange, float intensityScale) const;
 
 };
 

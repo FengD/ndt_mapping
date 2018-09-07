@@ -62,6 +62,9 @@ GraphSLAM::~GraphSLAM() {
 g2o::VertexSE3* GraphSLAM::add_se3_node(const Eigen::Isometry3d& pose) {
   g2o::VertexSE3* vertex(new g2o::VertexSE3());
   vertex->setId(graph->vertices().size());
+  if(graph->vertices().size() < 5){
+    vertex->setFixed(true);
+  }
   vertex->setEstimate(pose);
   graph->addVertex(vertex);
 
@@ -71,6 +74,9 @@ g2o::VertexSE3* GraphSLAM::add_se3_node(const Eigen::Isometry3d& pose) {
 g2o::VertexPlane* GraphSLAM::add_plane_node(const Eigen::Vector4d& plane_coeffs) {
   g2o::VertexPlane* vertex(new g2o::VertexPlane());
   vertex->setId(graph->vertices().size());
+  if(graph->vertices().size() < 5){
+    vertex->setFixed(true);
+  }
   vertex->setEstimate(plane_coeffs);
   graph->addVertex(vertex);
 
@@ -80,6 +86,9 @@ g2o::VertexPlane* GraphSLAM::add_plane_node(const Eigen::Vector4d& plane_coeffs)
 g2o::VertexPointXYZ* GraphSLAM::add_point_xyz_node(const Eigen::Vector3d& xyz) {
   g2o::VertexPointXYZ* vertex(new g2o::VertexPointXYZ());
   vertex->setId(graph->vertices().size());
+  if(graph->vertices().size() < 5){
+    vertex->setFixed(true);
+  }
   vertex->setEstimate(xyz);
   graph->addVertex(vertex);
 

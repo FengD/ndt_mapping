@@ -95,17 +95,13 @@ public:
     last_gps_edge_stamp = ros::Time(0);
 
     // subscribers
-    // odom_sub.reset(new message_filters::Subscriber<nav_msgs::Odometry>(nh, "/odom", 32));
-    // cloud_sub.reset(new message_filters::Subscriber<sensor_msgs::PointCloud2>(nh, "/filtered_points", 32));
-    // sync.reset(new message_filters::TimeSynchronizer<nav_msgs::Odometry, sensor_msgs::PointCloud2>(*odom_sub, *cloud_sub, 32));
-    // sync->registerCallback(boost::bind(&HdlGraphSlamMultiFrameNodelet::cloud_callback, this, _1, _2));
-    points_sub = nh.subscribe("/filtered_points", 256, &HdlGraphSlamMultiFrameNodelet::cloud_callback, this);
+    points_sub = nh.subscribe("/filtered_points", 65535, &HdlGraphSlamMultiFrameNodelet::cloud_callback, this);
 
-    floor_sub = nh.subscribe("/floor_detection/floor_coeffs", 32, &HdlGraphSlamMultiFrameNodelet::floor_coeffs_callback, this);
+    floor_sub = nh.subscribe("/floor_detection/floor_coeffs", 65535, &HdlGraphSlamMultiFrameNodelet::floor_coeffs_callback, this);
 
     if(private_nh.param<bool>("enable_gps", true)) {
-      gps_sub = nh.subscribe("/gps/geopoint", 32, &HdlGraphSlamMultiFrameNodelet::gps_callback, this);
-      nmea_sub = nh.subscribe("/gpsimu_driver/nmea_sentence", 32, &HdlGraphSlamMultiFrameNodelet::nmea_callback, this);
+      gps_sub = nh.subscribe("/gps/geopoint", 1000000, &HdlGraphSlamMultiFrameNodelet::gps_callback, this);
+      nmea_sub = nh.subscribe("/gpsimu_driver/nmea_sentence", 1000000, &HdlGraphSlamMultiFrameNodelet::nmea_callback, this);
     }
 
     // publishers
@@ -133,6 +129,10 @@ public:
     transform_thresholding = private_nh.param<bool>("transform_thresholding", false);
     max_acceptable_trans = private_nh.param<double>("max_acceptable_trans", 1.0);
     max_acceptable_angle = private_nh.param<double>("max_acceptable_angle", 1.0);
+    xRange = private_nh.param<float>("xRange", 20);
+    yRange = private_nh.param<float>("yRange", 20);
+    gpsDuration = private_nh.param<float>("gpsDuration", 30.0);
+
 
     // select a downsample method (VOXELGRID, APPROX_VOXELGRID, NONE)
     std::string downsample_method = private_nh.param<std::string>("downsample_method", "VOXELGRID");
@@ -210,7 +210,7 @@ private:
     std::copy_if(cloud->begin(), cloud->end(), std::back_inserter(filtered->points),
       [&](const PointT& p) {
         double d = sqrt((p.x - c[0]) * (p.x - c[0]) + (p.y - c[1]) * (p.y - c[1]));
-        return d < 80;
+        return d < 50;
       }
     );
 
@@ -413,7 +413,7 @@ private:
         continue;
       }
 
-      if(gps_msg->header.stamp - last_gps_edge_stamp < ros::Duration(30.0)) {
+      if(gps_msg->header.stamp - last_gps_edge_stamp < ros::Duration(gpsDuration)) {
         continue;
       }
 
@@ -527,7 +527,7 @@ private:
     snapshot = keyframes_snapshot;
     keyframes_snapshot_mutex.unlock();
 
-    auto cloud = map_cloud_generator->generate(snapshot, 0.05);
+    auto cloud = map_cloud_generator->generate(snapshot, map_cloud_resolution, xRange, yRange);
     if(!cloud) {
       return;
     }
@@ -800,8 +800,8 @@ private:
     keyframes_snapshot_mutex.lock();
     snapshot = keyframes_snapshot;
     keyframes_snapshot_mutex.unlock();
-
-    auto cloud = map_cloud_generator->generate(snapshot, req.resolution);
+    auto cloud = map_cloud_generator->generateRawMap(snapshot, req.xRange, req.yRange, req.intensityScale);
+    
     if(!cloud) {
       res.success = false;
       return true;
@@ -810,7 +810,13 @@ private:
     cloud->header.frame_id = map_frame_id;
     cloud->header.stamp = snapshot.back()->cloud->header.stamp;
 
-    int ret = pcl::io::savePCDFileBinary(req.destination, *cloud);
+    int ret = 0;
+    if(req.isAsciiMapSave) {
+      ret = pcl::io::savePCDFileASCII(req.destination, *cloud);
+    } else {
+      ret = pcl::io::savePCDFileBinary(req.destination, *cloud);
+    }
+
     res.success = ret == 0;
 
     return true;
@@ -891,6 +897,9 @@ private:
   bool transform_thresholding;  //
   double max_acceptable_trans;  //
   double max_acceptable_angle;
+  float xRange;
+  float yRange;
+  float gpsDuration;
 
   // odometry calculation
   Eigen::Matrix4f prev_trans;                  // previous estimated transform from keyframe

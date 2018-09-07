@@ -23,6 +23,7 @@ InformationMatrixCalculator::~InformationMatrixCalculator() {
 }
 
 Eigen::MatrixXd InformationMatrixCalculator::calc_information_matrix(const pcl::PointCloud<PointT>::ConstPtr& cloud1, const pcl::PointCloud<PointT>::ConstPtr& cloud2, const Eigen::Isometry3d& relpose) const {
+  // if the inverse cov matrix is constant
   if(use_const_inf_matrix) {
     Eigen::MatrixXd inf = Eigen::MatrixXd::Identity(6, 6);
     inf.topLeftCorner(3, 3).array() /= const_stddev_x;
@@ -30,13 +31,24 @@ Eigen::MatrixXd InformationMatrixCalculator::calc_information_matrix(const pcl::
     return inf;
   }
 
+  // else if the inverse cov matrix is calculated by fitness_score
   double fitness_score = calc_fitness_score(cloud1, cloud2, relpose);
 
   double min_var_x = std::pow(min_stddev_x, 2);
   double max_var_x = std::pow(max_stddev_x, 2);
   double min_var_q = std::pow(min_stddev_q, 2);
   double max_var_q = std::pow(max_stddev_q, 2);
+  // the weight of x, y, z, roll, pitch, yaw
+  // if fitness_socre = 0, which means cloud1 and cloud2 are exactly the same
+  // w_x or w_q is the min_var
+  // if fitness_socre = fitness_score_thresh
+  // w_x or w_q is the max_var
 
+  // fitness_socre up
+  // w up
+  // inverse cov matrix down
+  // cov matrix up
+  // noise up
   float w_x = weight(var_gain_a, fitness_score_thresh, min_var_x, max_var_x, fitness_score);
   float w_q = weight(var_gain_a, fitness_score_thresh, min_var_q, max_var_q, fitness_score);
 
@@ -82,4 +94,3 @@ double InformationMatrixCalculator::calc_fitness_score(const pcl::PointCloud<Poi
 }
 
 }
-

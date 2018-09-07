@@ -1,4 +1,7 @@
-float32 resolution
 string destination
+bool isAsciiMapSave
+float32 xRange
+float32 yRange
+float32 intensityScale
 ---
 bool success
