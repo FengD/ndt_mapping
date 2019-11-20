@@ -5,7 +5,7 @@ hdl_graph_slam_package
 This package is used to execute a lidar slam.
 
 ### RELATED Package
-[calibration] (http://gitlabout.hirain.com/feng.ding1/hdl_mapping-init-calibration.git) (provide an initializaition calibration yaml file)
+[calibration] (https://github.com/FengD/lidar_init_calibration) (provide an initializaition calibration yaml file)
 [ndt_omp] (http://gitlabout.hirain.com/feng.ding1/hdl_mapping-ndt-omp.git) (provide a multi-thread ndt method)
 
 ### Dependencies
@@ -21,3 +21,5 @@ This package is used to execute a lidar slam.
 * `roslaunch hdl_graph_slam hi_slam.launch bag_filename:=[bag file path]`
 
 * `roslaunch hdl_graph_slam hi_slam_multi_frame.launch bag_filename:=[bag file path]`
+### Example
+<img src="imgs/Picture1.png" height="400pix" /></br>
