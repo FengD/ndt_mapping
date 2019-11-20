@@ -21,3 +21,5 @@ This package is used to execute a lidar slam.
 * `roslaunch hdl_graph_slam hi_slam.launch bag_filename:=[bag file path]`
 
 * `roslaunch hdl_graph_slam hi_slam_multi_frame.launch bag_filename:=[bag file path]`
+### Example
+<img src="imgs/Picture1.png" height="400pix" /></br>
